@@ -1,0 +1,9 @@
+.container-login {
+   width: 800px;
+   height: 65vh;
+   margin: 0 auto;
+   display: flex;
+   flex-direction: column;
+   box-shadow: 2px 18px 70px #9d9d9d;
+
+}
