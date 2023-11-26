@@ -11,13 +11,32 @@ import {
 } from "@chakra-ui/react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import WebcamComponent from "../../../shared/WebcamComponent";
+import { useParams, useSearchParams } from "react-router-dom";
+import { UseQueryResult, useQuery } from "@tanstack/react-query";
+import { ApiResponse } from "../../../shared/interfaces/api.response.interface";
+import { getEmun } from "../../../api/emunRequest";
+import { transformEnum } from "../../../shared/transformEmun";
+
+type FormValues = {
+  tam_contraste: string;
+  tam_vph: string;
+  tam_vph_no_info: number;
+};
 
 function CrearTamizaje() {
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Form>();
+  } = useForm<FormValues>();
+  const param = useParams();
+
+  console.log(param);
+
+  const queryContransteList: UseQueryResult<ApiResponse, Error> = useQuery({
+    queryKey: ["constraseList"],
+    queryFn: () => getEmun("tamizaje", "tam_contraste"),
+  });
 
   const handleSubmiteForm: SubmitHandler<any> = (data) => {
     console.log(data);
@@ -74,10 +93,22 @@ function CrearTamizaje() {
                   </OrderedList>
                 </Box>
               </Box>
-              <Select placeholder="Contraste" variant="flushed" w={300}>
-                <option value="option1">Option 1</option>
-                <option value="option2">Option 2</option>
-                <option value="option3">Option 3</option>
+              <Select
+                placeholder="Seleccione contraste*"
+                variant="flushed"
+                w={300}
+              >
+                {queryContransteList.isSuccess && (
+                  <>
+                    {transformEnum(
+                      queryContransteList.data.objetoRespuesta
+                    ).map((item: string, index: number) => (
+                      <option key={index} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </>
+                )}
               </Select>
               <WebcamComponent />
               <RadioGroup mb={5}>

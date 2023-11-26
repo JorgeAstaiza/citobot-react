@@ -57,7 +57,7 @@ export const router = createBrowserRouter([
         element: <ListarTamizaje />,
       },
       {
-        path: "tamizaje/crear",
+        path: "tamizaje/crear/:id",
         element: <CrearTamizaje />,
       },
       {

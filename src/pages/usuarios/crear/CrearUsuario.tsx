@@ -12,33 +12,67 @@ import {
 import { Box } from "@chakra-ui/react";
 import { useState } from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
-
-type Form = {
-  firstName: string;
-  middleName: string;
-  firstLastName: string;
-  middleLastName: string;
-  IdType: "CC" | "TI";
-  Id: string;
-  usuario: string;
-  rol: "ADMIN" | "DOCTOR";
-  password: string;
-  email: string;
-  profession: any;
-  state: any;
-};
+import { Profession, User } from "../../../shared/interfaces/user.interface";
+import useSavePerson from "../../../hooks/useSavePersonMutate";
+import { Persona } from "../../../shared/interfaces/persona.interface";
+import { Pacientes } from "../../../shared/interfaces/pacientes.interface";
+import { UseQueryResult, useQuery } from "@tanstack/react-query";
+import { getEmun } from "../../../api/emunRequest";
+import { transformEnum } from "../../../shared/transformEmun";
+import { getProfessions } from "../../../api/usuarioRequest";
+import { ApiResponse } from "../../../shared/interfaces/api.response.interface";
+import useSaveUser from "../../../hooks/useSaveUserMutate";
 
 function CrearUsuario() {
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<Form>();
+  } = useForm<User & Persona>();
 
   const [showPassword, setShowPassword] = useState(false);
+  const savePersonQuery = useSavePerson();
+  const saveUserQuery = useSaveUser();
 
-  const handleSubmiteForm: SubmitHandler<Form> = (data) => {
-    console.log(data);
+  const queryProfessionsList = useQuery<ApiResponse>({
+    queryKey: ["profesiones"],
+    queryFn: getProfessions,
+  });
+  const queryRolList: UseQueryResult<ApiResponse, Error> = useQuery({
+    queryKey: ["roles"],
+    queryFn: () => getEmun("usuario", "usu_rol"),
+  });
+  const queryStateList: UseQueryResult<ApiResponse, Error> = useQuery({
+    queryKey: ["estados"],
+    queryFn: () => getEmun("usuario", "usu_estado"),
+  });
+
+  const handleSubmiteForm: SubmitHandler<User & Persona> = (data) => {
+    const person: Persona & Pacientes = {
+      per_gen_id: "1",
+      per_identificacion: data.per_identificacion,
+      per_otros_nombres: data.per_otros_nombres,
+      per_primer_apellido: data.per_primer_apellido,
+      per_primer_nombre: data.per_primer_nombre,
+      per_segundo_apellido: data.per_segundo_apellido,
+      per_tip_id: data.per_tip_id,
+    };
+    const user: User = {
+      usu_clave: data.usu_clave,
+      usu_email: data.usu_email,
+      usu_estado: data.usu_estado,
+      usu_per_identificacion: data.per_identificacion,
+      usu_pro_id: 1,
+      usu_rol: data.usu_rol,
+      usu_usuario: data.usu_usuario,
+    };
+
+    savePersonQuery.mutate(person, {
+      onSuccess: (data: ApiResponse) => {
+        console.log("entra success ", data);
+        saveUserQuery.mutate(user);
+      },
+    });
   };
 
   const handleShowPasswordClick = () => {
@@ -47,7 +81,7 @@ function CrearUsuario() {
 
   return (
     <div
-      className="h-screen flex flex-col  justify-start items-center pt-10"
+      className="h-max pb-5 flex flex-col  justify-start items-center pt-10"
       style={{
         background: "rgba(235, 237, 239 ,1)",
         width: "100%",
@@ -76,6 +110,7 @@ function CrearUsuario() {
               pb="10"
               maxWidth="100%"
               display="flex"
+              flexDirection="column"
               alignItems="normal"
               justifyContent="space-around"
               gap={6}
@@ -83,13 +118,15 @@ function CrearUsuario() {
               borderColor="gray.100"
               shadow="base"
             >
-              <Box maxWidth="100%" width="100%">
-                <FormControl isInvalid={errors.firstName}>
-                  <FormLabel htmlFor="firstName">Primer Nombre</FormLabel>
+              <Box maxWidth="100%" width="100%" display="flex" gap={6}>
+                <FormControl isInvalid={!!errors.per_primer_nombre}>
+                  <FormLabel htmlFor="per_primer_nombre">
+                    Primer Nombre
+                  </FormLabel>
                   <Input
                     placeholder="..."
-                    id="firstName"
-                    {...register("firstName", {
+                    id="per_primer_nombre"
+                    {...register("per_primer_nombre", {
                       required: {
                         value: true,
                         message: "Nombre es obligatorio",
@@ -97,20 +134,34 @@ function CrearUsuario() {
                     })}
                   />
                   <FormErrorMessage>
-                    {errors.firstName && (
+                    {errors.per_primer_nombre && (
                       <span className="text-red-600">
                         {" "}
-                        {errors.firstName?.message}{" "}
+                        {errors.per_primer_nombre?.message}{" "}
                       </span>
                     )}
                   </FormErrorMessage>
                 </FormControl>
-                <FormControl isInvalid={errors.firstLastName}>
-                  <FormLabel htmlFor="firstLastName">Primer Apellido</FormLabel>
+                <FormControl>
+                  <FormLabel htmlFor="per_otros_nombres">
+                    Segundo Nombre
+                  </FormLabel>
                   <Input
                     placeholder="..."
-                    id="firstLastName"
-                    {...register("firstLastName", {
+                    id="per_otros_nombres"
+                    {...register("per_otros_nombres")}
+                  />
+                </FormControl>
+              </Box>
+              <Box maxWidth="100%" width="100%" display="flex" gap={6}>
+                <FormControl isInvalid={!!errors.per_primer_apellido}>
+                  <FormLabel htmlFor="per_primer_apellido">
+                    Primer Apellido
+                  </FormLabel>
+                  <Input
+                    placeholder="..."
+                    id="per_primer_apellido"
+                    {...register("per_primer_apellido", {
                       required: {
                         value: true,
                         message: "Apellido es obligatorio",
@@ -122,20 +173,35 @@ function CrearUsuario() {
                     })}
                   />
                   <FormErrorMessage>
-                    {errors.firstLastName && (
+                    {errors.per_primer_apellido && (
                       <span className="text-red-600">
                         {" "}
-                        {errors.firstLastName?.message}{" "}
+                        {errors.per_primer_apellido?.message}{" "}
                       </span>
                     )}
                   </FormErrorMessage>
                 </FormControl>
-                <FormControl isInvalid={errors.IdType}>
-                  <FormLabel htmlFor="IdType">Tipo de Identificación</FormLabel>
+
+                <FormControl>
+                  <FormLabel htmlFor="per_segundo_apellido">
+                    Segundo Apellido
+                  </FormLabel>
+                  <Input
+                    placeholder="..."
+                    id="per_segundo_apellido"
+                    {...register("per_segundo_apellido")}
+                  />
+                </FormControl>
+              </Box>
+              <Box w="100%" display="flex" gap={6}>
+                <FormControl isInvalid={!!errors.per_tip_id}>
+                  <FormLabel htmlFor="per_tip_id">
+                    Tipo de Identificación
+                  </FormLabel>
                   <Select
                     placeholder="Selecciona una opcion"
-                    id="IdType"
-                    {...register("IdType", {
+                    id="per_tip_id"
+                    {...register("per_tip_id", {
                       required: {
                         value: true,
                         message: "El tipo de identificación es requerido",
@@ -146,35 +212,22 @@ function CrearUsuario() {
                     <option value="TI">T.I</option>
                   </Select>
                   <FormErrorMessage>
-                    {errors.IdType && (
+                    {errors.per_tip_id && (
                       <span className="text-red-600">
                         {" "}
-                        {errors.IdType?.message}{" "}
+                        {errors.per_tip_id?.message}{" "}
                       </span>
                     )}
                   </FormErrorMessage>
                 </FormControl>
-              </Box>
-              <Box maxWidth="100%" width="100%">
-                <FormLabel htmlFor="middleName">Segundo Nombre</FormLabel>
-                <Input
-                  placeholder="..."
-                  id="middleName"
-                  {...register("middleName")}
-                />
-
-                <FormLabel htmlFor="middleLastName">Segundo Apellido</FormLabel>
-                <Input
-                  placeholder="..."
-                  id="middleLastName"
-                  {...register("middleLastName")}
-                />
-                <FormControl isInvalid={errors.Id}>
-                  <FormLabel htmlFor="Id">N° de Identificación</FormLabel>
+                <FormControl isInvalid={!!errors.per_identificacion}>
+                  <FormLabel htmlFor="per_identificacion">
+                    N° de Identificación
+                  </FormLabel>
                   <Input
                     placeholder="..."
-                    id="Id"
-                    {...register("Id", {
+                    id="per_identificacion"
+                    {...register("per_identificacion", {
                       required: {
                         value: true,
                         message: "Numero de identificación es obligatorio",
@@ -192,10 +245,10 @@ function CrearUsuario() {
                     })}
                   />
                   <FormErrorMessage>
-                    {errors.Id && (
+                    {errors.per_identificacion && (
                       <span className="text-red-600">
                         {" "}
-                        {errors.Id?.message}{" "}
+                        {errors.per_identificacion?.message}{" "}
                       </span>
                     )}
                   </FormErrorMessage>
@@ -215,6 +268,7 @@ function CrearUsuario() {
               borderColor="gray.100"
               shadow="base"
               pb="6"
+              pt={6}
             >
               <Box
                 pr="6"
@@ -224,36 +278,45 @@ function CrearUsuario() {
                 display="flex"
                 gap={6}
               >
-                <FormControl isInvalid={errors.rol}>
-                  <FormLabel htmlFor="rol">Rol</FormLabel>
+                <FormControl isInvalid={!!errors.usu_rol}>
+                  <FormLabel htmlFor="usu_rol">Rol</FormLabel>
                   <Select
                     placeholder="Selecciona una opcion"
-                    id="rol"
-                    {...register("rol", {
+                    id="usu_rol"
+                    {...register("usu_rol", {
                       required: {
                         value: true,
                         message: "El rol es requerido",
                       },
                     })}
                   >
-                    <option value="CC">C.C</option>
-                    <option value="TI">T.I</option>
+                    {queryRolList.isSuccess && (
+                      <>
+                        {transformEnum(queryRolList.data.objetoRespuesta).map(
+                          (item: string, index: number) => (
+                            <option key={index} value={item}>
+                              {item}
+                            </option>
+                          )
+                        )}
+                      </>
+                    )}
                   </Select>
                   <FormErrorMessage>
-                    {errors.rol && (
+                    {errors.usu_rol && (
                       <span className="text-red-600">
                         {" "}
-                        {errors.rol?.message}{" "}
+                        {errors.usu_rol?.message}{" "}
                       </span>
                     )}
                   </FormErrorMessage>
                 </FormControl>
-                <FormControl isInvalid={errors.usuario}>
-                  <FormLabel htmlFor="usuario">Usuario</FormLabel>
+                <FormControl isInvalid={!!errors.usu_usuario}>
+                  <FormLabel htmlFor="usu_usuario">Usuario</FormLabel>
                   <Input
                     placeholder="..."
-                    id="usuario"
-                    {...register("usuario", {
+                    id="usu_usuario"
+                    {...register("usu_usuario", {
                       required: {
                         value: true,
                         message: "El usuario es obligatorio",
@@ -265,22 +328,22 @@ function CrearUsuario() {
                     })}
                   />
                   <FormErrorMessage>
-                    {errors.usuario && (
+                    {errors.usu_usuario && (
                       <span className="text-red-600">
                         {" "}
-                        {errors.usuario?.message}{" "}
+                        {errors.usu_usuario?.message}{" "}
                       </span>
                     )}
                   </FormErrorMessage>
                 </FormControl>
-                <FormControl isInvalid={errors.password}>
-                  <FormLabel htmlFor="password"> Contraseña</FormLabel>
+                <FormControl isInvalid={!!errors.usu_clave}>
+                  <FormLabel htmlFor="usu_clave"> Contraseña</FormLabel>
                   <InputGroup size="md">
                     <Input
                       placeholder="..."
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      {...register("password", {
+                      id="usu_clave"
+                      type={showPassword ? "text" : "usu_clave"}
+                      {...register("usu_clave", {
                         required: {
                           value: true,
                           message: "contraseña es obligatoria",
@@ -303,10 +366,10 @@ function CrearUsuario() {
                     </InputRightElement>
                   </InputGroup>
                   <FormErrorMessage>
-                    {errors.password && (
+                    {errors.usu_clave && (
                       <span className="text-red-600">
                         {" "}
-                        {errors.password?.message}{" "}
+                        {errors.usu_clave?.message}{" "}
                       </span>
                     )}
                   </FormErrorMessage>
@@ -320,12 +383,12 @@ function CrearUsuario() {
                 display="flex"
                 gap={6}
               >
-                <FormControl isInvalid={errors.email}>
-                  <FormLabel htmlFor="email">Correo</FormLabel>
+                <FormControl isInvalid={!!errors.usu_email}>
+                  <FormLabel htmlFor="usu_email">Correo</FormLabel>
                   <Input
                     placeholder="..."
-                    id="email"
-                    {...register("email", {
+                    id="usu_email"
+                    {...register("usu_email", {
                       required: {
                         value: true,
                         message: "El correo es obligatorio",
@@ -337,59 +400,78 @@ function CrearUsuario() {
                     })}
                   />
                   <FormErrorMessage>
-                    {errors.email && (
+                    {errors.usu_email && (
                       <span className="text-red-600">
                         {" "}
-                        {errors.email?.message}{" "}
+                        {errors.usu_email?.message}{" "}
                       </span>
                     )}
                   </FormErrorMessage>
                 </FormControl>
-                <FormControl isInvalid={errors.profession}>
-                  <FormLabel htmlFor="profession">Profesión</FormLabel>
+                <FormControl isInvalid={!!errors.usu_pro_id}>
+                  <FormLabel htmlFor="usu_pro_id">Profesión</FormLabel>
                   <Select
                     placeholder="Selecciona una opcion"
-                    id="profession"
-                    {...register("profession", {
+                    id="usu_pro_id"
+                    {...register("usu_pro_id", {
                       required: {
                         value: true,
                         message: "La profesion es requerida",
                       },
                     })}
                   >
-                    <option value="CC">C.C</option>
-                    <option value="TI">T.I</option>
+                    {queryProfessionsList.isSuccess && (
+                      <>
+                        console.log(queryProfessionsList.data);
+                        {queryProfessionsList.data.objetoRespuesta.map(
+                          (item: Profession) => (
+                            <option key={item.pro_id} value={item.pro_id}>
+                              {item.pro_nombre}
+                            </option>
+                          )
+                        )}
+                      </>
+                    )}
                   </Select>
                   <FormErrorMessage>
-                    {errors.profession && (
+                    {errors.usu_pro_id && (
                       <span className="text-red-600">
                         {" "}
-                        {errors.profession?.message}{" "}
+                        {errors.usu_pro_id?.message}{" "}
                       </span>
                     )}
                   </FormErrorMessage>
                 </FormControl>
 
-                <FormControl isInvalid={errors.state}>
-                  <FormLabel htmlFor="state">Profesión</FormLabel>
+                <FormControl isInvalid={!!errors.usu_estado}>
+                  <FormLabel htmlFor="usu_estado">Estado</FormLabel>
                   <Select
                     placeholder="Selecciona una opcion"
-                    id="state"
-                    {...register("state", {
+                    id="usu_estado"
+                    {...register("usu_estado", {
                       required: {
                         value: true,
                         message: "El estado es requerido",
                       },
                     })}
                   >
-                    <option value="CC">C.C</option>
-                    <option value="TI">T.I</option>
+                    {queryStateList.isSuccess && (
+                      <>
+                        {transformEnum(queryStateList.data.objetoRespuesta).map(
+                          (item: string, index: number) => (
+                            <option key={index} value={item}>
+                              {item}
+                            </option>
+                          )
+                        )}
+                      </>
+                    )}
                   </Select>
                   <FormErrorMessage>
-                    {errors.state && (
+                    {errors.usu_estado && (
                       <span className="text-red-600">
                         {" "}
-                        {errors.state?.message}{" "}
+                        {errors.usu_estado?.message}{" "}
                       </span>
                     )}
                   </FormErrorMessage>
@@ -403,6 +485,7 @@ function CrearUsuario() {
             width="100px"
             mb="5px"
             ml="5px"
+            isLoading={saveUserQuery.isPending}
           >
             Guardar
           </Button>

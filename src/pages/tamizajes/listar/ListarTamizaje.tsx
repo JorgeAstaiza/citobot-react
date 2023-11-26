@@ -9,20 +9,26 @@ import {
 import { useState } from "react";
 import { RxCross2 } from "react-icons/rx";
 import TableComponent from "../../../shared/TableComponent";
+import { useQuery } from "@tanstack/react-query";
+import { getTamizajes } from "../../../api/tamizajesRequest";
 
 function ListarTamizaje() {
   const columns = [
     "IDENTIFICACIÓN",
-    "NOMBRES",
-    "APELLIDOS",
-    "ROL",
-    "ESTADO",
+    "FECHA",
+    "HORA DE TOMA",
+    "NIVEL DE RIESGO",
     "ACCIONES",
   ];
 
   const [identificacion, setIdentificacion] = useState("");
   const [idType, setIdType] = useState("");
   const [date, setDate] = useState("");
+
+  const query = useQuery({ queryKey: ["tamizajes"], queryFn: getTamizajes });
+  if (query.isSuccess) {
+    console.log(query.data);
+  }
 
   const cleanIdInput = () => {
     setIdentificacion("");
@@ -31,7 +37,7 @@ function ListarTamizaje() {
   };
   return (
     <div
-      className="h-screen flex flex-col justify-start items-center pt-10"
+      className="h-max flex flex-col justify-start items-center pt-10 pb-5"
       style={{
         background: "rgba(235, 237, 239 ,1)",
         width: "100%",
@@ -91,7 +97,13 @@ function ListarTamizaje() {
               </Button>
             </ButtonGroup>
           </div>
-          <TableComponent columns={columns} data={[]} />
+          {query.isSuccess && (
+            <TableComponent
+              columns={columns}
+              data={query.data.objetoRespuesta}
+              type="tamizajes"
+            />
+          )}
         </div>
       </div>
     </div>

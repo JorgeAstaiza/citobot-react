@@ -4,6 +4,8 @@ import { useState } from "react";
 import { IoMdAdd } from "react-icons/io";
 import { RxCross2 } from "react-icons/rx";
 import TableComponent from "../../../shared/TableComponent";
+import { useQuery } from "@tanstack/react-query";
+import { getUsers } from "../../../api/usuarioRequest";
 
 function ListarUsuarios() {
   const columns = [
@@ -16,6 +18,7 @@ function ListarUsuarios() {
   ];
 
   const [identificacion, setIdentificacion] = useState("");
+  const query = useQuery({ queryKey: ["usuarios"], queryFn: getUsers });
 
   const cleanIdInput = () => {
     setIdentificacion("");
@@ -23,7 +26,7 @@ function ListarUsuarios() {
 
   return (
     <div
-      className="h-screen flex flex-col justify-start items-center pt-10"
+      className="h-max flex flex-col justify-start items-center pt-10 pb-5"
       style={{
         background: "rgba(235, 237, 239 ,1)",
         width: "100%",
@@ -65,7 +68,13 @@ function ListarUsuarios() {
               </Link>
             </ButtonGroup>
           </div>
-          <TableComponent columns={columns} data={[]} />
+          {query.isSuccess && (
+            <TableComponent
+              columns={columns}
+              data={query.data.objetoRespuesta}
+              type="usuarios"
+            />
+          )}
         </div>
       </div>
     </div>
